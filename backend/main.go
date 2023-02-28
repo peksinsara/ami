@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	// Connect to Asterisk Manager
 	conn, err := net.Dial("tcp", "192.168.1.27:5038")
 	if err != nil {
 		fmt.Println("Error connecting to Asterisk Manager:", err)
@@ -14,11 +15,13 @@ func main() {
 	}
 	defer conn.Close()
 
+	// Login to Asterisk Manager
 	fmt.Fprintf(conn, "Action: Login\r\n")
 	fmt.Fprintf(conn, "Username: admin\r\n")
 	fmt.Fprintf(conn, "Secret: 1234\r\n")
 	fmt.Fprintf(conn, "\r\n")
 
+	// Read login response
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err != nil {
@@ -35,6 +38,7 @@ func main() {
 	fmt.Fprintf(conn, "Command: sip show peers\r\n")
 	fmt.Fprintf(conn, "\r\n")
 
+	// Read command response
 	response = ""
 	for {
 		n, err := conn.Read(buf)
@@ -49,6 +53,7 @@ func main() {
 	}
 	fmt.Println(response)
 
+	// Parse response to get number of peers and online/offline status
 	var numOnline, numOffline int
 	lines := strings.Split(response, "\n")
 	for _, line := range lines {
