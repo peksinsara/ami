@@ -4,16 +4,20 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 )
 
 func main() {
+
 	// Connect to Asterisk Manager
+	fmt.Println("Connecting to Asterisk Manager...")
 	conn, err := net.Dial("tcp", "192.168.1.27:5038")
 	if err != nil {
 		fmt.Println("Error connecting to Asterisk Manager:", err)
 		return
 	}
-	defer conn.Close()
+
+	fmt.Println("Connected to Asterisk Manager")
 
 	// Login to Asterisk Manager
 	fmt.Fprintf(conn, "Action: Login\r\n")
@@ -26,13 +30,17 @@ func main() {
 	n, err := conn.Read(buf)
 	if err != nil {
 		fmt.Println("Error reading login response:", err)
+		conn.Close()
 		return
 	}
 	response := string(buf[:n])
 	if !strings.Contains(response, "Success") {
 		fmt.Println("Error logging in to Asterisk Manager:", response)
+		conn.Close()
+
 		return
 	}
+	fmt.Println("Logged in to Asterisk Manager")
 
 	// Get number of peers and online/offline status
 	fmt.Fprintf(conn, "Action: Command\r\n")
@@ -45,6 +53,8 @@ func main() {
 		n, err := conn.Read(buf)
 		if err != nil {
 			fmt.Println("Error reading command response:", err)
+			conn.Close()
+
 			return
 		}
 		response += string(buf[:n])
@@ -61,6 +71,7 @@ func main() {
 			numOffline++
 		}
 	}
+	fmt.Printf("Fetched peer status at %v\n", time.Now())
 
 	// Get channel information
 	fmt.Fprintf(conn, "Action: Command\r\n")
@@ -73,6 +84,7 @@ func main() {
 		n, err := conn.Read(buf)
 		if err != nil {
 			fmt.Println("Error reading command response:", err)
+			conn.Close()
 			return
 		}
 		response += string(buf[:n])
@@ -80,6 +92,7 @@ func main() {
 			break
 		}
 	}
+	fmt.Printf("Fetched channel data at %v\n", time.Now())
 
 	// Count active channels, active calls, and calls processed
 	var numActiveChannels, numActiveCalls, numCallsProcessed int
@@ -93,7 +106,6 @@ func main() {
 			fmt.Sscanf(words[i-1], "%d", &numCallsProcessed)
 		}
 	}
-
 	// Print results
 	fmt.Println("Total users:", numOnline+numOffline)
 	fmt.Println("Online:", numOnline)
@@ -101,4 +113,5 @@ func main() {
 	fmt.Printf("Active channels: %d\n", numActiveChannels)
 	fmt.Printf("Active calls: %d\n", numActiveCalls)
 	fmt.Printf("Call processed: %d\n", numCallsProcessed)
+
 }
