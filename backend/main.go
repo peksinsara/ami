@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+type AsteriskStatus struct {
+	NumOnline         int
+	NumTotal          int
+	NumOffline        int
+	NumActiveChannels int
+	NumActiveCalls    int
+	NumCallsProcessed int
+	LastUpdate        time.Time
+}
+
 func main() {
 
 	// Connect to Asterisk Manager
@@ -42,76 +52,89 @@ func main() {
 	}
 	fmt.Println("Logged in to Asterisk Manager")
 
-	// Get number of peers and online/offline status
-	fmt.Fprintf(conn, "Action: Command\r\n")
-	fmt.Fprintf(conn, "Command: sip show peers\r\n")
-	fmt.Fprintf(conn, "\r\n")
+	// Initialize Asterisk status
+	status := AsteriskStatus{}
 
-	// Read command response
-	response = ""
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("Error reading command response:", err)
-			conn.Close()
+	ticker := time.NewTicker(5 * time.Second)
+	for range ticker.C {
+		// Get number of peers and online/offline status
+		fmt.Fprintf(conn, "Action: Command\r\n")
+		fmt.Fprintf(conn, "Command: sip show peers\r\n")
+		fmt.Fprintf(conn, "\r\n")
 
-			return
+		// Read command response
+		response = ""
+		for {
+			n, err := conn.Read(buf)
+			if err != nil {
+				fmt.Println("Error reading command response:", err)
+				conn.Close()
+
+				return
+			}
+			response += string(buf[:n])
+			if n < len(buf) {
+				break
+			}
 		}
-		response += string(buf[:n])
-		if n < len(buf) {
-			break
+		// Count online and offline peers
+		var numOnline, numOffline int
+		lines := strings.Split(response, "\n")
+		for _, line := range lines {
+			if strings.Contains(line, "OK (") {
+				numOnline++
+			} else if strings.Contains(line, "UNKNOWN") {
+				numOffline++
+			}
 		}
+		// Update status
+		status.NumOnline = numOnline
+		status.NumOffline = numOffline
+		status.NumTotal = status.NumOnline + status.NumOffline
+
+		// Get channel information
+		fmt.Fprintf(conn, "Action: Command\r\n")
+		fmt.Fprintf(conn, "Command: core show channels\r\n")
+		fmt.Fprintf(conn, "\r\n")
+
+		// Read command response
+		response = ""
+		for {
+			n, err := conn.Read(buf)
+			if err != nil {
+				fmt.Println("Error reading command response:", err)
+				conn.Close()
+				return
+			}
+			response += string(buf[:n])
+			if n < len(buf) {
+				break
+			}
+		}
+
+		// Count active channels, active calls, and calls processed
+
+		var numActiveChannels, numActiveCalls, numCallsProcessed int
+		words := strings.Fields(response)
+		for i, word := range words {
+			if word == "active" && words[i+1] == "channels" {
+				fmt.Sscanf(words[i-1], "%d", &numActiveChannels)
+			} else if word == "active" && words[i+1] == "call" {
+				fmt.Sscanf(words[i-1], "%d", &numActiveCalls)
+			} else if word == "calls" && words[i+1] == "processed" {
+				fmt.Sscanf(words[i-1], "%d", &numCallsProcessed)
+			}
+		}
+		// Update status
+		status.NumActiveChannels = numActiveChannels
+		status.NumActiveCalls = numActiveCalls
+		status.NumCallsProcessed = numCallsProcessed
+
+		fmt.Printf("Total users: %d\n", status.NumOnline+status.NumOffline)
+		fmt.Printf("Online: %d\n", status.NumOnline)
+		fmt.Printf("Offline: %d\n", status.NumOffline)
+		fmt.Printf("Active channels: %d\n", status.NumActiveChannels)
+		fmt.Printf("Active calls: %d\n", status.NumActiveCalls)
+		fmt.Printf("Call processed: %d\n", status.NumCallsProcessed)
 	}
-	var numOnline, numOffline int
-	lines := strings.Split(response, "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "OK (") {
-			numOnline++
-		} else if strings.Contains(line, "UNKNOWN") {
-			numOffline++
-		}
-	}
-	fmt.Printf("Fetched peer status at %v\n", time.Now())
-
-	// Get channel information
-	fmt.Fprintf(conn, "Action: Command\r\n")
-	fmt.Fprintf(conn, "Command: core show channels\r\n")
-	fmt.Fprintf(conn, "\r\n")
-
-	// Read command response
-	response = ""
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("Error reading command response:", err)
-			conn.Close()
-			return
-		}
-		response += string(buf[:n])
-		if n < len(buf) {
-			break
-		}
-	}
-	fmt.Printf("Fetched channel data at %v\n", time.Now())
-
-	// Count active channels, active calls, and calls processed
-	var numActiveChannels, numActiveCalls, numCallsProcessed int
-	words := strings.Fields(response)
-	for i, word := range words {
-		if word == "active" && words[i+1] == "channels" {
-			fmt.Sscanf(words[i-1], "%d", &numActiveChannels)
-		} else if word == "active" && words[i+1] == "call" {
-			fmt.Sscanf(words[i-1], "%d", &numActiveCalls)
-		} else if word == "calls" && words[i+1] == "processed" {
-			fmt.Sscanf(words[i-1], "%d", &numCallsProcessed)
-		}
-	}
-	// Print results
-	fmt.Println("Total users:", numOnline+numOffline)
-	fmt.Println("Online:", numOnline)
-	fmt.Println("Offline:", numOffline)
-	fmt.Printf("Active channels: %d\n", numActiveChannels)
-	fmt.Printf("Active calls: %d\n", numActiveCalls)
-	fmt.Printf("Call processed: %d\n", numCallsProcessed)
-
 }
