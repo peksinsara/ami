@@ -3,22 +3,28 @@ package main
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type AsteriskStatus struct {
-	NumOnline         int       `json:"num_online`
-	NumTotal          int       `json:"num_total`
-	NumOffline        int       `json:"num_offline`
-	NumActiveChannels int       `json:"num_acive_channels`
-	NumActiveCalls    int       `json:"num_active_calls`
-	NumCallsProcessed int       `json:"num_calls_processed`
-	LastUpdate        time.Time `json:"last_update`
+	NumOnline         int       `json:"numOnline"`
+	NumTotal          int       `json:"numTotal"`
+	NumOffline        int       `json:"numOffline"`
+	NumActiveChannels int       `json:"numActiveChannels"`
+	NumActiveCalls    int       `json:"numActiveCalls"`
+	NumCallsProcessed int       `json:"numCallsProcessed"`
+	LastUpdate        time.Time `json:"lastUpdate"`
+}
+
+type Connection struct {
+	conn *websocket.Conn
 }
 
 func main() {
-
 	// Connect to Asterisk Manager
 	fmt.Println("Connecting to Asterisk Manager...")
 	conn, err := net.Dial("tcp", "192.168.1.27:5038")
@@ -27,15 +33,13 @@ func main() {
 		return
 	}
 
-	fmt.Println("Connected to Asterisk Manager")
-
 	// Login to Asterisk Manager
+	fmt.Println("Connected to Asterisk Manager")
 	fmt.Fprintf(conn, "Action: Login\r\n")
 	fmt.Fprintf(conn, "Username: admin\r\n")
 	fmt.Fprintf(conn, "Secret: 1234\r\n")
 	fmt.Fprintf(conn, "\r\n")
 
-	// Read login response
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err != nil {
@@ -52,24 +56,27 @@ func main() {
 	}
 	fmt.Println("Logged in to Asterisk Manager")
 
-	// Initialize Asterisk status
 	status := AsteriskStatus{}
+
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		websocketHandler(w, r, &status)
+	})
+	go http.ListenAndServe(":8080", nil)
 
 	ticker := time.NewTicker(5 * time.Second)
 	for range ticker.C {
-		// Get number of peers and online/offline status
+
+		// Get total, online and offline peers
 		fmt.Fprintf(conn, "Action: Command\r\n")
 		fmt.Fprintf(conn, "Command: sip show peers\r\n")
 		fmt.Fprintf(conn, "\r\n")
 
-		// Read command response
 		response = ""
 		for {
 			n, err := conn.Read(buf)
 			if err != nil {
 				fmt.Println("Error reading command response:", err)
 				conn.Close()
-
 				return
 			}
 			response += string(buf[:n])
@@ -77,7 +84,6 @@ func main() {
 				break
 			}
 		}
-		// Count online and offline peers
 		var numOnline, numOffline int
 		lines := strings.Split(response, "\n")
 		for _, line := range lines {
@@ -92,12 +98,11 @@ func main() {
 		status.NumOffline = numOffline
 		status.NumTotal = status.NumOnline + status.NumOffline
 
-		// Get channel information
+		// Get channel info
 		fmt.Fprintf(conn, "Action: Command\r\n")
 		fmt.Fprintf(conn, "Command: core show channels\r\n")
 		fmt.Fprintf(conn, "\r\n")
 
-		// Read command response
 		response = ""
 		for {
 			n, err := conn.Read(buf)
@@ -113,7 +118,6 @@ func main() {
 		}
 
 		// Count active channels, active calls, and calls processed
-
 		var numActiveChannels, numActiveCalls, numCallsProcessed int
 		words := strings.Fields(response)
 		for i, word := range words {
@@ -125,10 +129,11 @@ func main() {
 				fmt.Sscanf(words[i-1], "%d", &numCallsProcessed)
 			}
 		}
-		// Update status
+
 		status.NumActiveChannels = numActiveChannels
 		status.NumActiveCalls = numActiveCalls
 		status.NumCallsProcessed = numCallsProcessed
+		status.LastUpdate = time.Now()
 
 		fmt.Printf("Total users: %d\n", status.NumOnline+status.NumOffline)
 		fmt.Printf("Online: %d\n", status.NumOnline)
@@ -136,5 +141,30 @@ func main() {
 		fmt.Printf("Active channels: %d\n", status.NumActiveChannels)
 		fmt.Printf("Active calls: %d\n", status.NumActiveCalls)
 		fmt.Printf("Call processed: %d\n", status.NumCallsProcessed)
+
 	}
+
+}
+
+func websocketHandler(w http.ResponseWriter, r *http.Request, status *AsteriskStatus) {
+	// Upgrade HTTP connection to websocket connection
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Println("Error upgrading to websocket connection:", err)
+		return
+	}
+	go func() {
+		defer conn.Close()
+		for {
+			err := conn.WriteJSON(status)
+			if err != nil {
+				fmt.Println("Error sending Asterisk status:", err)
+				return
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
 }
