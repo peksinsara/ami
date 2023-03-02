@@ -8,13 +8,13 @@ import (
 )
 
 type AsteriskStatus struct {
-	NumOnline         int
-	NumTotal          int
-	NumOffline        int
-	NumActiveChannels int
-	NumActiveCalls    int
-	NumCallsProcessed int
-	LastUpdate        time.Time
+	NumOnline         int       `json:"num_online`
+	NumTotal          int       `json:"num_total`
+	NumOffline        int       `json:"num_offline`
+	NumActiveChannels int       `json:"num_acive_channels`
+	NumActiveCalls    int       `json:"num_active_calls`
+	NumCallsProcessed int       `json:"num_calls_processed`
+	LastUpdate        time.Time `json:"last_update`
 }
 
 func main() {
