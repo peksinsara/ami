@@ -52,11 +52,13 @@ footer.ui.footer.segment {
 }
 
 @media only screen and (max-width: 451) {
-  .ui.statistic > .value {
-    font-size: 30px !important;
-    font-weight: bold !important;
-  }
   .ui.grid {
     flex-wrap: wrap;
   }
+}
+
+.lastUpdate {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }

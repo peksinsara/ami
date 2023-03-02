@@ -61,9 +61,9 @@ func main() {
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		websocketHandler(w, r, &status)
 	})
-	go http.ListenAndServe(":8080", nil)
+	go http.ListenAndServe(":8081", nil)
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
 
 		// Get total, online and offline peers
@@ -164,7 +164,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request, status *AsteriskSt
 				fmt.Println("Error sending Asterisk status:", err)
 				return
 			}
-			time.Sleep(5 * time.Second)
+			time.Sleep(1 * time.Second)
 		}
 	}()
 }

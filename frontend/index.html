@@ -5,7 +5,6 @@
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="stylesheet" type="text/css" href="semantic/dist/semantic.min.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.13/semantic.min.css" />
         <link rel="stylesheet" href="./styles.css">
         <title>AMI</title>
@@ -18,15 +17,16 @@
                     <img src="./assets/logo.png" class="logo">AMI</div>
 
             </div>
-
+            <div style="display: flex; justify-content: center; align-items: center;" id="lastUpdate">0</div>
             <div class="ui container">
                 <div class="ui grid">
                     <div class="row">
+                        
                         <div class="three wide column">
                             <div class="ui segment">
                                 <div class="ui header">Total users</div>
                                 <div class="ui statistic">
-                                    <div class="value">123</div>
+                                    <div class="value" id="numTotal">0</div>
                                 </div>
                             </div>
                         </div>
@@ -34,7 +34,8 @@
                             <div class="ui segment">
                                 <div class="ui header">Online users</div>
                                 <div class="ui statistic">
-                                    <div class="value">456</div>
+                                    <div class="value" id="numOnline">0</div>
+
                                 </div>
                             </div>
                         </div>
@@ -42,7 +43,7 @@
                             <div class="ui segment">
                                 <div class="ui header">Offline users</div>
                                 <div class="ui statistic">
-                                    <div class="value">789</div>
+                                    <div class="value" id="numOffline">0</div>
                                 </div>
                             </div>
                         </div>
@@ -52,7 +53,7 @@
                             <div class="ui segment">
                                 <div class="ui header">Active channels</div>
                                 <div class="ui statistic">
-                                    <div class="value">789</div>
+                                    <div class="value" id="numActiveChannels">0</div>
                                 </div>
                             </div>
 
@@ -61,7 +62,7 @@
                             <div class="ui segment">
                                 <div class="ui header">Ongoing call</div>
                                 <div class="ui statistic">
-                                    <div class="value">789</div>
+                                    <div class="value" id="numActiveCalls">0</div>
                                 </div>
                             </div>
                         </div>
@@ -69,7 +70,7 @@
                             <div class="ui segment">
                                 <div class="ui header">Call processed</div>
                                 <div class="ui statistic">
-                                    <div class="value">789</div>
+                                    <div class="value" id="numCallsProcessed">0</div>
                                 </div>
                             </div>
                         </div>
@@ -84,6 +85,9 @@
 
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.13/semantic.min.js"></script>
+            <script src="./script.js"></script>
     </body>
+
+
 
 </html>
