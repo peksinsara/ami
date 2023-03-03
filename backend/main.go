@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -10,44 +9,14 @@ import (
 	"github.com/peksinsara/AMI/server"
 )
 
-const (
-	AsteriskManagerAddress = "192.168.1.27:5038"
-	AsteriskManagerUser    = "admin"
-	AsteriskManagerPass    = "1234"
-)
-
 func main() {
 	// Connect to Asterisk Manager
-	fmt.Println("Connecting to Asterisk Manager...")
-	conn, err := net.Dial("tcp", AsteriskManagerAddress)
+	conn, err := server.ConnectToAsterisk()
 	if err != nil {
-		fmt.Println("Error connecting to Asterisk Manager:", err)
+		fmt.Println("Failed to connect to Asterisk Manager:", err)
 		return
 	}
 	defer conn.Close()
-
-	// Login to Asterisk Manager
-	fmt.Println("Connected to Asterisk Manager")
-	fmt.Fprintf(conn, "Action: Login\r\n")
-	fmt.Fprintf(conn, "Username: %s\r\n", AsteriskManagerUser)
-	fmt.Fprintf(conn, "Secret: %s\r\n", AsteriskManagerPass)
-	fmt.Fprintf(conn, "\r\n")
-
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	if err != nil {
-		fmt.Println("Error reading login response:", err)
-		conn.Close()
-		return
-	}
-	response := string(buf[:n])
-	if !strings.Contains(response, "Success") {
-		fmt.Println("Error logging in to Asterisk Manager:", response)
-		conn.Close()
-
-		return
-	}
-	fmt.Println("Logged in to Asterisk Manager")
 
 	status := &server.AsteriskStatus{}
 
@@ -56,6 +25,7 @@ func main() {
 	})
 	go http.ListenAndServe(":8081", nil)
 
+	buf := make([]byte, 1024)
 	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
 
@@ -64,7 +34,7 @@ func main() {
 		fmt.Fprintf(conn, "Command: sip show peers\r\n")
 		fmt.Fprintf(conn, "\r\n")
 
-		response = ""
+		response := ""
 		for {
 			n, err := conn.Read(buf)
 			if err != nil {
