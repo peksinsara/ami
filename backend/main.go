@@ -7,37 +7,30 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/peksinsara/AMI/server"
 )
 
-type AsteriskStatus struct {
-	NumOnline         int       `json:"numOnline"`
-	NumTotal          int       `json:"numTotal"`
-	NumOffline        int       `json:"numOffline"`
-	NumActiveChannels int       `json:"numActiveChannels"`
-	NumActiveCalls    int       `json:"numActiveCalls"`
-	NumCallsProcessed int       `json:"numCallsProcessed"`
-	LastUpdate        time.Time `json:"lastUpdate"`
-}
-
-type Connection struct {
-	conn *websocket.Conn
-}
+const (
+	AsteriskManagerAddress = "192.168.1.27:5038"
+	AsteriskManagerUser    = "admin"
+	AsteriskManagerPass    = "1234"
+)
 
 func main() {
 	// Connect to Asterisk Manager
 	fmt.Println("Connecting to Asterisk Manager...")
-	conn, err := net.Dial("tcp", "192.168.1.27:5038")
+	conn, err := net.Dial("tcp", AsteriskManagerAddress)
 	if err != nil {
 		fmt.Println("Error connecting to Asterisk Manager:", err)
 		return
 	}
+	defer conn.Close()
 
 	// Login to Asterisk Manager
 	fmt.Println("Connected to Asterisk Manager")
 	fmt.Fprintf(conn, "Action: Login\r\n")
-	fmt.Fprintf(conn, "Username: admin\r\n")
-	fmt.Fprintf(conn, "Secret: 1234\r\n")
+	fmt.Fprintf(conn, "Username: %s\r\n", AsteriskManagerUser)
+	fmt.Fprintf(conn, "Secret: %s\r\n", AsteriskManagerPass)
 	fmt.Fprintf(conn, "\r\n")
 
 	buf := make([]byte, 1024)
@@ -56,10 +49,10 @@ func main() {
 	}
 	fmt.Println("Logged in to Asterisk Manager")
 
-	status := AsteriskStatus{}
+	status := &server.AsteriskStatus{}
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		websocketHandler(w, r, &status)
+		server.WebsocketHandler(w, r, status)
 	})
 	go http.ListenAndServe(":8081", nil)
 
@@ -102,7 +95,6 @@ func main() {
 		fmt.Fprintf(conn, "Action: Command\r\n")
 		fmt.Fprintf(conn, "Command: core show channels\r\n")
 		fmt.Fprintf(conn, "\r\n")
-
 		response = ""
 		for {
 			n, err := conn.Read(buf)
@@ -116,7 +108,6 @@ func main() {
 				break
 			}
 		}
-
 		// Count active channels, active calls, and calls processed
 		var numActiveChannels, numActiveCalls, numCallsProcessed int
 		words := strings.Fields(response)
@@ -125,7 +116,7 @@ func main() {
 				fmt.Sscanf(words[i-1], "%d", &numActiveChannels)
 			} else if word == "active" && words[i+1] == "call" {
 				fmt.Sscanf(words[i-1], "%d", &numActiveCalls)
-			} else if word == "calls" && words[i+1] == "processed" {
+			} else if word == "call" && words[i+1] == "processed" {
 				fmt.Sscanf(words[i-1], "%d", &numCallsProcessed)
 			}
 		}
@@ -143,28 +134,4 @@ func main() {
 		fmt.Printf("Call processed: %d\n", status.NumCallsProcessed)
 
 	}
-
-}
-
-func websocketHandler(w http.ResponseWriter, r *http.Request, status *AsteriskStatus) {
-	// Upgrade HTTP connection to websocket connection
-	upgrader := websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool { return true },
-	}
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Println("Error upgrading to websocket connection:", err)
-		return
-	}
-	go func() {
-		defer conn.Close()
-		for {
-			err := conn.WriteJSON(status)
-			if err != nil {
-				fmt.Println("Error sending Asterisk status:", err)
-				return
-			}
-			time.Sleep(1 * time.Second)
-		}
-	}()
 }
