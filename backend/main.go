@@ -126,6 +126,7 @@ func main() {
 		status.NumCallsProcessed = numCallsProcessed
 		status.LastUpdate = time.Now()
 
+		// Print values
 		fmt.Printf("Total users: %d\n", status.NumOnline+status.NumOffline)
 		fmt.Printf("Online: %d\n", status.NumOnline)
 		fmt.Printf("Offline: %d\n", status.NumOffline)
