@@ -2,29 +2,35 @@ package data
 
 import (
 	"fmt"
-
-	"github.com/peksinsara/AMI/server"
+	"strings"
 )
 
-func CountPeers(conn *server.AMIConn) {
-	registered := 0
-	unregistered := 0
+type PeerStatus struct {
+	Registered   int
+	Unregistered int
+}
 
-	// Register event listener for PeerStatus events
-	conn.RegisterEvent("PeerStatus", func(e *server.AMIEvent) {
-		status := e.Fields["PeerStatus"]
-		switch status {
-		case "Registered":
-			registered++
-		case "Unregistered":
-			unregistered++
+func (ps *PeerStatus) UpdateStatus(status string) {
+	if status == "Registered" {
+		ps.Registered++
+	} else if status == "Unregistered" {
+		ps.Unregistered++
+	}
+}
+
+func (ps *PeerStatus) String() string {
+	return fmt.Sprintf("Registered peers: %d\nUnregistered peers: %d", ps.Registered, ps.Unregistered)
+}
+
+func GetPeerStatus(event string) *PeerStatus {
+	peerStatus := &PeerStatus{}
+
+	for _, line := range strings.Split(event, "\r\n") {
+		if strings.HasPrefix(line, "PeerStatus: ") {
+			status := strings.TrimSpace(strings.TrimPrefix(line, "PeerStatus: "))
+			peerStatus.UpdateStatus(status)
 		}
-	})
+	}
 
-	// Wait for events to be processed
-	conn.Wait()
-
-	// Display results
-	fmt.Printf("Registered peers: %d\n", registered)
-	fmt.Printf("Unregistered peers: %d\n", unregistered)
+	return peerStatus
 }

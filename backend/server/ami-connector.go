@@ -5,42 +5,44 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/peksinsara/AMI/data"
 )
 
-func Connect() {
-	conn, err := net.Dial("tcp", "192.168.1.27:5038")
+func ConnectToAMI(address, username, password string) error {
+	conn, err := net.Dial("tcp", address)
 	if err != nil {
-		fmt.Println("Error connecting to AMI server:", err)
-		return
+		return err
+	}
+	defer conn.Close()
+
+	fmt.Fprintf(conn, "Action: Login\r\nUsername: %s\r\nSecret: %s\r\n\r\n", username, password)
+
+	peerStatus := &data.PeerStatus{}
+
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		line := scanner.Text()
+		fmt.Println(line)
+
+		if strings.HasPrefix(line, "Event: PeerStatus") {
+			peerStatus.UpdateStatus(strings.TrimSpace(strings.TrimPrefix(line, "Event: PeerStatus")))
+			fmt.Println(peerStatus)
+		} else if strings.HasPrefix(line, "Event: FullyBooted") {
+			fmt.Println("AMI fully booted")
+			fmt.Println(peerStatus)
+		} else if strings.HasPrefix(line, "Event: CoreShowChannels") {
+			activeCalls, numActiveCalls := data.GetActiveCalls(line)
+			fmt.Printf("Active calls: %d\n", numActiveCalls)
+			for _, call := range activeCalls {
+				fmt.Println(call)
+			}
+		}
 	}
 
-	reader := bufio.NewReader(conn)
-
-	// Send login command
-	fmt.Fprintf(conn, "Action: Login\r\nUsername: admin\r\nSecret: 1234\r\n\r\n")
-
-	// Wait for login response
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Println("Error reading from AMI server:", err)
-			return
-		}
-		fmt.Println(strings.TrimSpace(line))
-		if strings.HasPrefix(line, "Response: Success") {
-			break
-		}
+	if err := scanner.Err(); err != nil {
+		return err
 	}
 
-	// Enable event notifications
-	fmt.Fprintf(conn, "Action: Events\r\nEventMask: all\r\n\r\n")
-
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Println("Error reading from AMI server:", err)
-			return
-		}
-		fmt.Println(strings.TrimSpace(line))
-	}
+	return nil
 }
