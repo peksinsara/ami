@@ -1,47 +1,46 @@
 package server
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"strings"
 )
 
-const (
-	AsteriskManagerAddress = "192.168.1.27:5038"
-	AsteriskManagerUser    = "admin"
-	AsteriskManagerPass    = "1234"
-)
-
-// Connect to Asterisk Manager and log in
-func ConnectToAsterisk() (net.Conn, error) {
-	fmt.Println("Connecting to Asterisk Manager...")
-	conn, err := net.Dial("tcp", AsteriskManagerAddress)
+func Connect() {
+	conn, err := net.Dial("tcp", "192.168.1.27:5038")
 	if err != nil {
-		fmt.Println("Error connecting to Asterisk Manager:", err)
-		return nil, err
+		fmt.Println("Error connecting to AMI server:", err)
+		return
 	}
 
-	// Login to Asterisk Manager
-	fmt.Println("Connected to Asterisk Manager")
-	fmt.Fprintf(conn, "Action: Login\r\n")
-	fmt.Fprintf(conn, "Username: %s\r\n", AsteriskManagerUser)
-	fmt.Fprintf(conn, "Secret: %s\r\n", AsteriskManagerPass)
-	fmt.Fprintf(conn, "\r\n")
+	reader := bufio.NewReader(conn)
 
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	if err != nil {
-		fmt.Println("Error reading login response:", err)
-		conn.Close()
-		return nil, err
-	}
-	response := string(buf[:n])
-	if !strings.Contains(response, "Success") {
-		fmt.Println("Error logging in to Asterisk Manager:", response)
-		conn.Close()
-		return nil, fmt.Errorf("failed to log in to Asterisk Manager")
+	// Send login command
+	fmt.Fprintf(conn, "Action: Login\r\nUsername: admin\r\nSecret: 1234\r\n\r\n")
+
+	// Wait for login response
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error reading from AMI server:", err)
+			return
+		}
+		fmt.Println(strings.TrimSpace(line))
+		if strings.HasPrefix(line, "Response: Success") {
+			break
+		}
 	}
 
-	fmt.Println("Logged in to Asterisk Manager")
-	return conn, nil
+	// Enable event notifications
+	fmt.Fprintf(conn, "Action: Events\r\nEventMask: all\r\n\r\n")
+
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error reading from AMI server:", err)
+			return
+		}
+		fmt.Println(strings.TrimSpace(line))
+	}
 }
