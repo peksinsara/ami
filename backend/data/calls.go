@@ -1,58 +1,58 @@
 package data
 
 import (
-	"fmt"
+	"encoding/json"
+	"strconv"
 	"strings"
 )
 
-type Call struct {
-	Channel          string
-	CallerID         string
-	Destination      string
-	Duration         string
-	CallState        string
-	AccountCode      string
-	Context          string
-	Exten            string
-	ChannelStateDesc string
+type ActiveCall struct {
+	Channel            string `json:"channel"`
+	CallerIDNum        string `json:"callerIDNum"`
+	CallerIDName       string `json:"callerIDName"`
+	Destination        string `json:"destination"`
+	DestinationChannel string `json:"destinationChannel"`
 }
 
-func GetActiveCalls(event string) ([]*Call, int) {
-	var calls []*Call
+func GetActiveCalls(event string) ([]ActiveCall, int) {
+	activeCalls := []ActiveCall{}
+	numActiveCalls := 0
+
 	for _, line := range strings.Split(event, "\r\n") {
 		if strings.HasPrefix(line, "Event: CoreShowChannels") {
-			continue
-		}
-		fields := strings.Split(line, "!")
-		if len(fields) >= 10 {
-			call := &Call{
-				Channel:          fields[0],
-				CallerID:         fields[1],
-				Destination:      fields[2],
-				Duration:         fields[3],
-				CallState:        fields[4],
-				AccountCode:      fields[5],
-				Context:          fields[6],
-				Exten:            fields[7],
-				ChannelStateDesc: fields[8],
+			fields := strings.Split(line, " ")
+			numActiveCalls, _ = strconv.Atoi(fields[1])
+		} else if strings.HasPrefix(line, "Channel: ") {
+			activeCall := ActiveCall{}
+			activeCall.Channel = strings.TrimSpace(strings.TrimPrefix(line, "Channel: "))
+			for _, line := range strings.Split(event, "\r\n") {
+				if strings.HasPrefix(line, "ChannelState: 6") || strings.HasPrefix(line, "ChannelStateDesc: Up") {
+					activeCall := ActiveCall{}
+					activeCall.Channel = strings.TrimSpace(strings.TrimPrefix(line, "Channel: "))
+					for _, line := range strings.Split(event, "\r\n") {
+						if strings.HasPrefix(line, "CallerIDNum: ") {
+							activeCall.CallerIDNum = strings.TrimSpace(strings.TrimPrefix(line, "CallerIDNum: "))
+						} else if strings.HasPrefix(line, "CallerIDName: ") {
+							activeCall.CallerIDName = strings.TrimSpace(strings.TrimPrefix(line, "CallerIDName: "))
+						} else if strings.HasPrefix(line, "Destination: ") {
+							activeCall.Destination = strings.TrimSpace(strings.TrimPrefix(line, "Destination: "))
+						} else if strings.HasPrefix(line, "DestinationChannel: ") {
+							activeCall.DestinationChannel = strings.TrimSpace(strings.TrimPrefix(line, "DestinationChannel: "))
+						}
+					}
+					activeCalls = append(activeCalls, activeCall)
+				}
 			}
-			calls = append(calls, call)
 		}
 	}
 
-	activeCalls := 0
-	for _, call := range calls {
-		if call.ChannelStateDesc == "Up" {
-			activeCalls++
-		}
-	}
-
-	fmt.Printf("Active calls: %d\n", activeCalls)
-
-	return calls, activeCalls
+	return activeCalls, numActiveCalls
 }
 
-func (c *Call) String() string {
-	return fmt.Sprintf("Channel: %s, CallerID: %s, Destination: %s, Duration: %s, CallState: %s, AccountCode: %s, Context: %s, Exten: %s, ChannelStateDesc: %s",
-		c.Channel, c.CallerID, c.Destination, c.Duration, c.CallState, c.AccountCode, c.Context, c.Exten, c.ChannelStateDesc)
+func ActiveCallsToJSON(activeCalls []ActiveCall) (string, error) {
+	jsonBytes, err := json.Marshal(activeCalls)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
 }

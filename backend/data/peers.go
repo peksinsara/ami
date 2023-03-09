@@ -1,25 +1,26 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
 
 type PeerStatus struct {
-	Registered   int
-	Unregistered int
+	Active   int `json:"active"`
+	Inactive int `json:"inactive"`
 }
 
 func (ps *PeerStatus) UpdateStatus(status string) {
 	if status == "Registered" {
-		ps.Registered++
-	} else if status == "Unregistered" {
-		ps.Unregistered++
+		ps.Active++
+	} else if status == "Unregistered " {
+		ps.Inactive++
 	}
 }
 
 func (ps *PeerStatus) String() string {
-	return fmt.Sprintf("Registered peers: %d\nUnregistered peers: %d", ps.Registered, ps.Unregistered)
+	return fmt.Sprintf("Active peers: %d\nInactive peers: %d\n", ps.Active, ps.Inactive)
 }
 
 func GetPeerStatus(event string) *PeerStatus {
@@ -33,4 +34,12 @@ func GetPeerStatus(event string) *PeerStatus {
 	}
 
 	return peerStatus
+}
+
+func PeerStatusToJSON(peerStatus *PeerStatus) (string, error) {
+	jsonBytes, err := json.Marshal(peerStatus)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
 }

@@ -26,7 +26,7 @@ func ConnectToAMI(address, username, password string) error {
 		fmt.Println(line)
 
 		if strings.HasPrefix(line, "Event: PeerStatus") {
-			peerStatus.UpdateStatus(strings.TrimSpace(strings.TrimPrefix(line, "Event: PeerStatus")))
+			peerStatus.UpdateStatus(strings.TrimSpace(strings.TrimPrefix(line, "PeerStatus: ")))
 			fmt.Println(peerStatus)
 		} else if strings.HasPrefix(line, "Event: FullyBooted") {
 			fmt.Println("AMI fully booted")
