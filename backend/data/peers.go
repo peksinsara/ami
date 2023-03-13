@@ -13,9 +13,9 @@ type PeerStatus struct {
 
 func (ps *PeerStatus) UpdateStatus(status string) {
 	fmt.Println("Updating status:", status)
-	if status == "Registered" {
+	if status == "Registered" || status == "Reachable" {
 		ps.Active++
-	} else if status == "Unregistered" {
+	} else {
 		ps.Inactive++
 	}
 }
