@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	amiAddress := "192.168.0.102:5038"
+	amiAddress := "192.168.0.104:5038"
 	amiUsername := "admin"
 	amiPassword := "1234"
 
@@ -21,7 +21,7 @@ func main() {
 	// Start a goroutine to serve the WebSocketServer
 	go func() {
 		http.Handle("/status", wss)
-		err := http.ListenAndServe("192.168.0.102:8081", nil)
+		err := http.ListenAndServe("192.168.0.104:8081", nil)
 		if err != nil {
 			fmt.Println("Error serving WebSocketServer:", err)
 		}
