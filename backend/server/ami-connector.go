@@ -9,7 +9,7 @@ import (
 	"github.com/peksinsara/AMI/data"
 )
 
-func ConnectToAMI(address, username, password string) error {
+func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatus) error {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return err
@@ -17,8 +17,6 @@ func ConnectToAMI(address, username, password string) error {
 	defer conn.Close()
 
 	fmt.Fprintf(conn, "Action: Login\r\nUsername: %s\r\nSecret: %s\r\n\r\n", username, password)
-
-	peerStatus := &data.PeerStatus{}
 
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {

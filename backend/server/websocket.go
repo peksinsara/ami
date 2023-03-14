@@ -24,7 +24,10 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Failed to upgrade connection:", err)
 		return
 	}
-	err = wss.writeStatus(conn)
+	defer conn.Close() // make sure to close the connection when done
+
+	// Send initial status data
+	err = wss.writeStatus(conn, wss.PeerStatus)
 	if err != nil {
 		fmt.Println("Failed to write initial status:", err)
 		return
@@ -34,7 +37,8 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err = wss.writeStatus(conn)
+		// Send updated status data
+		err = wss.writeStatus(conn, wss.PeerStatus)
 		if err != nil {
 			fmt.Println("Failed to write status:", err)
 			return
@@ -42,6 +46,11 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (wss *WebSocketServer) writeStatus(conn *websocket.Conn) error {
-	return nil
+func (wss *WebSocketServer) writeStatus(conn *websocket.Conn, peerStatus *data.PeerStatus) error {
+	// Convert PeerStatus to JSON
+	jsonStr, err := data.PeerStatusToJSON(peerStatus)
+	if err != nil {
+		return err
+	}
+	return conn.WriteMessage(websocket.TextMessage, []byte(jsonStr))
 }

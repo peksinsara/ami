@@ -28,7 +28,7 @@ func main() {
 	}()
 
 	for {
-		err := server.ConnectToAMI(amiAddress, amiUsername, amiPassword)
+		err := server.ConnectToAMI(amiAddress, amiUsername, amiPassword, wss.PeerStatus)
 		if err != nil {
 			fmt.Println("Error connecting to AMI:", err)
 			return
