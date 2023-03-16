@@ -27,7 +27,7 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	err = wss.writeStatus(conn, wss.PeerStatus)
+	err = wss.writeStatus(conn, wss.PeerStatus, wss.ActiveCalls)
 	if err != nil {
 		fmt.Println("Failed to write initial status:", err)
 		return
@@ -37,7 +37,7 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err = wss.writeStatus(conn, wss.PeerStatus)
+		err = wss.writeStatus(conn, wss.PeerStatus, wss.ActiveCalls)
 		if err != nil {
 			fmt.Println("Failed to write status:", err)
 			return
@@ -45,12 +45,16 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (wss *WebSocketServer) writeStatus(conn *websocket.Conn, peerStatus *data.PeerStatus) error {
+func (wss *WebSocketServer) writeStatus(conn *websocket.Conn, peerStatus *data.PeerStatus, activeCalls *data.ActiveCalls) error {
 	psJsonStr, err := data.PeerStatusToJSON(peerStatus)
 	if err != nil {
 		return err
 	}
+	acJsonStr, err := data.ActiveCallsToJSON(activeCalls)
+	if err != nil {
+		return err
+	}
 
-	jsonStr := fmt.Sprintf(`{"peer_status":%s,}`, psJsonStr)
+	jsonStr := fmt.Sprintf(`{"status":%s, "calls":%s}`, psJsonStr, acJsonStr)
 	return conn.WriteMessage(websocket.TextMessage, []byte(jsonStr))
 }

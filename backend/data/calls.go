@@ -21,13 +21,8 @@ func HandleEvent(data Data, activeCalls *ActiveCalls) {
 		if data.ChannelState == "6" {
 			activeCalls.Count++
 			fmt.Println("Newstate count active calls", activeCalls.Count)
-		} else {
-			return
 		}
-
-	}
-
-	if data.Event == "Hangup" {
+	} else if data.Event == "Hangup" {
 		fmt.Println(data.ChannelState)
 		activeCalls.Count--
 		if activeCalls.Count < 0 {
@@ -37,8 +32,8 @@ func HandleEvent(data Data, activeCalls *ActiveCalls) {
 	}
 }
 
-func ActiveCallsToJSON(ac *ActiveCalls) (string, error) {
-	jsonBytes, err := json.Marshal(map[string]int{"active_calls": ac.Count})
+func ActiveCallsToJSON(activeCalls *ActiveCalls) (string, error) {
+	jsonBytes, err := json.Marshal(activeCalls)
 	if err != nil {
 		return "", err
 	}

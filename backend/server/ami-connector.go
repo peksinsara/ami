@@ -9,12 +9,13 @@ import (
 	"github.com/peksinsara/AMI/data"
 )
 
-func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatus, activeCalls *data.ActiveCalls) error {
+func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatus) error {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
+
 	var object data.Data
 
 	fmt.Fprintf(conn, "Action: Login\r\nUsername: %s\r\nSecret: %s\r\n\r\n", username, password)
@@ -22,6 +23,7 @@ func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatu
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 
+		activeCalls := &data.ActiveCalls{Count: 0}
 		line := scanner.Text()
 
 		if strings.HasPrefix(line, "PeerStatus") {
@@ -45,12 +47,11 @@ func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatu
 			if key == "Linkedid" {
 				object.Linkedid = value
 			}
-
 		}
-
 		data.HandleEvent(object, activeCalls)
 
 	}
+
 	if err := scanner.Err(); err != nil {
 		return err
 	}

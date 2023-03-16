@@ -14,7 +14,8 @@ func main() {
 	amiPassword := "1234"
 
 	wss := &server.WebSocketServer{
-		PeerStatus: &data.PeerStatus{},
+		PeerStatus:  &data.PeerStatus{},
+		ActiveCalls: &data.ActiveCalls{},
 	}
 
 	go func() {
@@ -26,7 +27,7 @@ func main() {
 	}()
 
 	for {
-		err := server.ConnectToAMI(amiAddress, amiUsername, amiPassword, wss.PeerStatus, wss.ActiveCalls)
+		err := server.ConnectToAMI(amiAddress, amiUsername, amiPassword, wss.PeerStatus)
 		if err != nil {
 			fmt.Println("Error connecting to AMI:", err)
 			return

@@ -12,21 +12,22 @@ type PeerStatus struct {
 }
 
 func (ps *PeerStatus) UpdateStatus(status string) {
-	switch status {
-	case "Registered":
+	if status == "Registered" {
 		if ps.Inactive > 0 {
 			ps.Inactive--
 		}
 		ps.Active++
-	case "Unregistered":
+	} else if status == "Unregistered" {
 		if ps.Active > 0 {
 			ps.Active--
 		}
 		ps.Inactive++
-	case "Reachable":
-	default:
-
+	} else if status == "Reachable" {
+		ps.Active--
+	} else {
+		return
 	}
+
 }
 
 func GetPeerStatus(event string, peerStatus *PeerStatus) {
