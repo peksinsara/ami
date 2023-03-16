@@ -23,7 +23,7 @@ func (ps *PeerStatus) UpdateStatus(status string) {
 		}
 		ps.Inactive++
 	} else if status == "Reachable" {
-		ps.Active--
+		return
 	} else {
 		return
 	}

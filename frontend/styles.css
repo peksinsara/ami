@@ -6,6 +6,9 @@ html {
   width: 100px;
   height: 100px;
 }
+#columnstyle {
+  width: 30% !important;
+}
 .main {
   background-color: #2a384c;
   padding: 20px 0px;
@@ -35,26 +38,6 @@ footer.ui.footer.segment {
 .custom-footer-text {
   color: #a0b2c2 !important;
   font-style: italic;
-}
-
-@media only screen and (max-width: 733px) {
-  .ui.grid {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-  .ui.grid > .row > [class*="three wide"].column {
-    width: 32% !important;
-  }
-  .ui.statistic > .value {
-    font-size: 40px !important;
-    font-weight: bold !important;
-  }
-}
-
-@media only screen and (max-width: 451) {
-  .ui.grid {
-    flex-wrap: wrap;
-  }
 }
 
 .lastUpdate {

@@ -1,12 +1,23 @@
-const webSocket = new WebSocket("ws://192.168.1.27:8081/ws");
+const webSocket = new WebSocket('ws://192.168.1.8:8081/status');
 
 webSocket.onmessage = function(event) {
-    const status = JSON.parse(event.data);
-    document.getElementById("numOnline").innerHTML = status.numOnline;
-    document.getElementById("numTotal").innerHTML = status.numTotal;
-    document.getElementById("numOffline").innerHTML = status.numOffline;
-    document.getElementById("numActiveChannels").innerHTML = status.numActiveChannels;
-    document.getElementById("numActiveCalls").innerHTML = status.numActiveCalls;
-    document.getElementById("numCallsProcessed").innerHTML = status.numCallsProcessed;
-    document.getElementById("lastUpdate").innerHTML = status.lastUpdate;
-}
+  const data = JSON.parse(event.data);
+ // console.log('Received data:', data);
+
+  if (data.status) {
+    const activePeers = data.status.active_peers;
+   // document.getElementById('numOnline').innerHTML = activePeers;
+
+    const inactivePeers = data.status.inactive_peers;
+    document.getElementById('numOffline').innerHTML = inactivePeers;
+  } else {
+    console.log('No "status" data found in received message');
+  }
+
+  if (data.calls) {
+    const activeCalls = data.calls.active_calls;
+    document.getElementById('numActiveCalls').innerHTML = activeCalls;
+  } else {
+    console.log('No "calls" data found in received message');
+  }
+};
