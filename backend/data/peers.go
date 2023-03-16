@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
@@ -23,13 +24,13 @@ func (ps *PeerStatus) UpdateStatus(status string) {
 		}
 		ps.Inactive++
 	case "Reachable":
-		// do nothing, since Reachable is considered active
 	default:
-		// do nothing for other status
+
 	}
 }
 
 func GetPeerStatus(event string, peerStatus *PeerStatus) {
+	fmt.Println("printanje peersa", event)
 
 	for _, line := range strings.Split(event, "\r\n") {
 		if strings.HasPrefix(line, "PeerStatus: ") {

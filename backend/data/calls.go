@@ -1,29 +1,46 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 )
 
-type ActiveCalls struct {
-	NumCalls int `json:"calls"`
+type Data struct {
+	Event        string `json:"Event"`
+	ChannelState string `json:"ChannelState"`
+	Linkedid     string `json:"Linkedid"`
 }
 
-func GetActiveCalls(event string, activeCalls *ActiveCalls) {
+type ActiveCalls struct {
+	Count int `json:"active_calls"`
+}
 
-	if strings.HasPrefix(event, "Event: Newstate") {
-		fmt.Println("enter in HasPrefix Event: Newstate")
-		activeCalls.NumCalls++
-	} else if strings.HasPrefix(event, "Event: Hangup") {
-		fmt.Println("enter in HasPrefix Event: Hangup")
-		activeCalls.NumCalls--
-	} else if strings.HasSuffix(event, "ChannelStateDesc: Up") {
-		fmt.Println("enter ChannelStateDesc up ")
-		activeCalls.NumCalls++
+func HandleEvent(data Data, activeCalls *ActiveCalls) {
+	if data.Event == "Newstate" {
+		fmt.Println(data.ChannelState)
+		if data.ChannelState == "6" {
+			activeCalls.Count++
+			fmt.Println("Newstate count active calls", activeCalls.Count)
+		} else {
+			return
+		}
+
+	}
+
+	if data.Event == "Hangup" {
+		fmt.Println(data.ChannelState)
+		activeCalls.Count--
+		if activeCalls.Count < 0 {
+			activeCalls.Count = 0
+		}
+		fmt.Println("Newstate count active calls after hangup", activeCalls.Count)
 	}
 }
 
-func (ac *ActiveCalls) String() string {
-	return strconv.Itoa(ac.NumCalls)
+func ActiveCallsToJSON(ac *ActiveCalls) (string, error) {
+	jsonBytes, err := json.Marshal(map[string]int{"active_calls": ac.Count})
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
 }

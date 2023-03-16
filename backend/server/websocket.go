@@ -10,7 +10,8 @@ import (
 )
 
 type WebSocketServer struct {
-	PeerStatus *data.PeerStatus
+	PeerStatus  *data.PeerStatus
+	ActiveCalls *data.ActiveCalls
 }
 
 func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -24,9 +25,8 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Failed to upgrade connection:", err)
 		return
 	}
-	defer conn.Close() // make sure to close the connection when done
+	defer conn.Close()
 
-	// Send initial status data
 	err = wss.writeStatus(conn, wss.PeerStatus)
 	if err != nil {
 		fmt.Println("Failed to write initial status:", err)
@@ -37,7 +37,6 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		// Send updated status data
 		err = wss.writeStatus(conn, wss.PeerStatus)
 		if err != nil {
 			fmt.Println("Failed to write status:", err)
@@ -47,10 +46,11 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (wss *WebSocketServer) writeStatus(conn *websocket.Conn, peerStatus *data.PeerStatus) error {
-	// Convert PeerStatus to JSON
-	jsonStr, err := data.PeerStatusToJSON(peerStatus)
+	psJsonStr, err := data.PeerStatusToJSON(peerStatus)
 	if err != nil {
 		return err
 	}
+
+	jsonStr := fmt.Sprintf(`{"peer_status":%s,}`, psJsonStr)
 	return conn.WriteMessage(websocket.TextMessage, []byte(jsonStr))
 }

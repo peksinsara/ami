@@ -9,26 +9,24 @@ import (
 )
 
 func main() {
-	amiAddress := "192.168.0.104:5038"
+	amiAddress := "192.168.1.8:5038"
 	amiUsername := "admin"
 	amiPassword := "1234"
 
-	// Create a new WebSocketServer instance
 	wss := &server.WebSocketServer{
 		PeerStatus: &data.PeerStatus{},
 	}
 
-	// Start a goroutine to serve the WebSocketServer
 	go func() {
 		http.Handle("/status", wss)
-		err := http.ListenAndServe("192.168.0.104:8081", nil)
+		err := http.ListenAndServe("192.168.1.8:8081", nil)
 		if err != nil {
 			fmt.Println("Error serving WebSocketServer:", err)
 		}
 	}()
 
 	for {
-		err := server.ConnectToAMI(amiAddress, amiUsername, amiPassword, wss.PeerStatus)
+		err := server.ConnectToAMI(amiAddress, amiUsername, amiPassword, wss.PeerStatus, wss.ActiveCalls)
 		if err != nil {
 			fmt.Println("Error connecting to AMI:", err)
 			return
