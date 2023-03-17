@@ -1,4 +1,5 @@
-const webSocket = new WebSocket('ws://192.168.1.8:8081/status');
+const webSocket = new WebSocket('ws://192.168.1.19:8082/status');
+const statusLabel = document.querySelector('#status-label');
 
 webSocket.onmessage = function(event) {
   const data = JSON.parse(event.data);
@@ -6,10 +7,13 @@ webSocket.onmessage = function(event) {
 
   if (data.status) {
     const activePeers = data.status.active_peers;
-   // document.getElementById('numOnline').innerHTML = activePeers;
+   document.getElementById('numOnline').innerHTML = activePeers;
 
     const inactivePeers = data.status.inactive_peers;
     document.getElementById('numOffline').innerHTML = inactivePeers;
+
+    const totalPeers = data.status.total_peers;
+    document.getElementById('numTotal').innerHTML = totalPeers;
   } else {
     console.log('No "status" data found in received message');
   }
@@ -21,3 +25,14 @@ webSocket.onmessage = function(event) {
     console.log('No "calls" data found in received message');
   }
 };
+webSocket.onopen = function() {
+  statusLabel.textContent = 'Connected';
+  statusLabel.parentNode.classList.add('green');
+};
+
+webSocket.onclose = function() {
+  statusLabel.textContent = 'Not Connected';
+  statusLabel.parentNode.classList.add('red');
+};
+
+

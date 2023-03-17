@@ -9,7 +9,7 @@ import (
 	"github.com/peksinsara/AMI/data"
 )
 
-func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatus) error {
+func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatus, activeCalls *data.ActiveCalls) error {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return err
@@ -20,18 +20,39 @@ func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatu
 
 	fmt.Fprintf(conn, "Action: Login\r\nUsername: %s\r\nSecret: %s\r\n\r\n", username, password)
 
+	buf := make([]byte, 1024)
+	fmt.Fprintf(conn, "Action: Command\r\n")
+	fmt.Fprintf(conn, "Command: sip show peers\r\n")
+	fmt.Fprintf(conn, "\r\n")
+	response := ""
+	for {
+		n, err := conn.Read(buf)
+		if err != nil {
+			fmt.Println("Error reading command response:", err)
+			conn.Close()
+		}
+		response += string(buf[:n])
+		if n < len(buf) {
+			break
+		}
+	}
+	var numOnline, numOffline int
+	lines := strings.Split(response, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "OK") {
+			numOnline++
+		} else if strings.Contains(line, "UNKNOWN") {
+			numOffline++
+		}
+	}
+
+	data.InitialStatus(peerStatus, numOffline, numOnline)
+
 	scanner := bufio.NewScanner(conn)
+
 	for scanner.Scan() {
 
-		activeCalls := &data.ActiveCalls{Count: 0}
 		line := scanner.Text()
-
-		if strings.HasPrefix(line, "PeerStatus") {
-			data.GetPeerStatus(line, peerStatus)
-			fmt.Println("Active peers:", peerStatus.Active)
-			fmt.Println("Inactive peers:", peerStatus.Inactive)
-			fmt.Println()
-		}
 
 		parts := strings.Split(line, ": ")
 		if len(parts) == 2 {
@@ -47,8 +68,18 @@ func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatu
 			if key == "Linkedid" {
 				object.Linkedid = value
 			}
+			if key == "Peer" {
+				object.Peer = value
+			}
+			if key == "PeerStatus" {
+				object.PeerStatus = value
+			}
+
 		}
 		data.HandleEvent(object, activeCalls)
+		data.GetPeerStatus(object, peerStatus)
+
+		//fmt.Println("Calls:", activeCalls)
 
 	}
 

@@ -17,35 +17,43 @@
                     <img src="./assets/logo.png" class="logo">AMI</div>
 
             </div>
-            <div style="display: flex; justify-content: center; align-items: center;" id="lastUpdate">0</div>
+            <div class="row-connection" style="display: flex; justify-content: center; align-items: center; margin-top: 20px;">
+            <div class="ui label">
+                <i class="wifi icon"></i> 
+                <span id="status-label">Connected</span>
+              </div>
+            </div>
+              
             <div class="ui container">
                 <div class="ui grid">
                     <div class="row">
                         
-                        <div class="three wide column" >
-                            <div class="ui segment" id="columnstyle">
+                            <div class="ui segment" >
                                 <div class="ui header">Total users</div>
                                 <div class="ui statistic">
-                                    <div class="value" id="numOnline">0</div>
+                                    <div class="value" id="numTotal">0</div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="three wide column">
+                      
                             <div class="ui segment">
                                 <div class="ui header">Online users</div>
                                 <div class="ui statistic">
-                                    <div class="value" id="numOffline">0</div>
+                                    <div class="value" id="numOnline">0</div>
 
                                 </div>
                             </div>
-                        </div>
-                        <div class="three wide column">
-                            <div class="ui segment">
+                        
+                            <div class="ui segment" id="columnstyle">
                                 <div class="ui header">Offline users</div>
+                                <div class="ui statistic">
+                                    <div class="value" id="numOffline">0</div>
+                                </div>
+                            </div>
+                            <div class="ui segment">
+                                <div class="ui header">Active Calls</div>
                                 <div class="ui statistic">
                                     <div class="value" id="numActiveCalls">0</div>
                                 </div>
-                            </div>
                         </div>
                     </div>
                 </div>

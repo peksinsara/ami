@@ -3,42 +3,58 @@ package data
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 type PeerStatus struct {
 	Active   int `json:"active_peers"`
 	Inactive int `json:"inactive_peers"`
+	Total    int `json:"total_peers"`
 }
 
-func (ps *PeerStatus) UpdateStatus(status string) {
-	if status == "Registered" {
-		if ps.Inactive > 0 {
-			ps.Inactive--
-		}
-		ps.Active++
-	} else if status == "Unregistered" {
-		if ps.Active > 0 {
-			ps.Active--
-		}
-		ps.Inactive++
-	} else if status == "Reachable" {
-		return
-	} else {
-		return
-	}
+var peerAdress []string
 
+func InitialStatus(peerStatus *PeerStatus, numOffline int, numOnline int) {
+	numTotal := numOffline + numOnline
+	fmt.Println("Initial status from Asterisk CLI")
+	fmt.Println("Online: ", numOnline)
+	fmt.Println("Offline: ", numOffline)
+	fmt.Println("Total: ", numTotal)
+
+	peerStatus.Active = numOnline
+	peerStatus.Inactive = numOffline
+	peerStatus.Total = numTotal
 }
 
-func GetPeerStatus(event string, peerStatus *PeerStatus) {
-	fmt.Println("printanje peersa", event)
+func GetPeerStatus(data Data, peerStatus *PeerStatus) {
+	if data.Event == "PeerStatus" {
+		if data.PeerStatus == "Registered" {
+			if !stringInSlice(data.Peer, peerAdress) {
+				peerAdress = append(peerAdress, data.Peer)
+				fmt.Println("Peer registered: ", data.Peer)
 
-	for _, line := range strings.Split(event, "\r\n") {
-		if strings.HasPrefix(line, "PeerStatus: ") {
-			status := strings.TrimSpace(strings.TrimPrefix(line, "PeerStatus: "))
-			peerStatus.UpdateStatus(status)
+				if peerStatus.Inactive > 0 {
+					peerStatus.Inactive--
+				}
+				peerStatus.Active++
+
+			}
+
+		} else if data.PeerStatus == "Unregistered" {
+			if stringInSlice(data.Peer, peerAdress) {
+				peerAdress = removeElement(peerAdress, data.Peer)
+				fmt.Println("Peer unregistered: ", data.Peer)
+
+				if peerStatus.Active > 0 {
+					peerStatus.Active--
+				}
+
+				peerStatus.Inactive++
+
+			}
 		}
+
 	}
+
 }
 
 func PeerStatusToJSON(peerStatus *PeerStatus) (string, error) {

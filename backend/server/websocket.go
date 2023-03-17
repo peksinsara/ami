@@ -22,26 +22,34 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("Failed to upgrade connection:", err)
 		return
 	}
 	defer conn.Close()
 
 	err = wss.writeStatus(conn, wss.PeerStatus, wss.ActiveCalls)
 	if err != nil {
-		fmt.Println("Failed to write initial status:", err)
 		return
 	}
-
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		err = wss.writeStatus(conn, wss.PeerStatus, wss.ActiveCalls)
+	previousData := ""
+	for {
+		psJsonStr, err := data.PeerStatusToJSON(wss.PeerStatus)
 		if err != nil {
-			fmt.Println("Failed to write status:", err)
-			return
+			continue
 		}
+		acJsonStr, err := data.ActiveCallsToJSON(wss.ActiveCalls)
+		if err != nil {
+			continue
+		}
+
+		jsonStr := fmt.Sprintf(`{"status":%s, "calls":%s}`, psJsonStr, acJsonStr)
+		if jsonStr != previousData {
+			err = conn.WriteMessage(websocket.TextMessage, []byte(jsonStr))
+			if err != nil {
+				return
+			}
+			previousData = jsonStr
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
