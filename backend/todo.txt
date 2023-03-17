@@ -1,3 +1,2 @@
 TODO:
-- create a websocket that will display all data from events ( registered, unregistered peers, active calls, started call..)
-- 
+- event sip show peers after login action

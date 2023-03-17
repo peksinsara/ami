@@ -2,13 +2,19 @@ package data
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 )
 
 type PeerStatus struct {
 	Active   int `json:"active_peers"`
 	Inactive int `json:"inactive_peers"`
+	Total    int `json:"total_peers"`
+}
+
+func InitialStatus(numOffline int, numOnline int) *PeerStatus {
+	numTotal := numOffline + numOnline
+	return &PeerStatus{Active: numOnline, Inactive: numOffline, Total: numTotal}
+
 }
 
 func (ps *PeerStatus) UpdateStatus(status string) {
@@ -31,7 +37,6 @@ func (ps *PeerStatus) UpdateStatus(status string) {
 }
 
 func GetPeerStatus(event string, peerStatus *PeerStatus) {
-	fmt.Println("printanje peersa", event)
 
 	for _, line := range strings.Split(event, "\r\n") {
 		if strings.HasPrefix(line, "PeerStatus: ") {
