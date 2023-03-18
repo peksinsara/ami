@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/peksinsara/AMI/data"
@@ -14,7 +13,12 @@ type WebSocketServer struct {
 	ActiveCalls *data.ActiveCalls
 }
 
+var EventNotifier chan bool
+
 func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	EventNotifier = make(chan bool, 100)
+
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -31,7 +35,9 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	previousData := ""
-	for {
+
+	for <-EventNotifier {
+
 		psJsonStr, err := data.PeerStatusToJSON(wss.PeerStatus)
 		if err != nil {
 			continue
@@ -49,7 +55,6 @@ func (wss *WebSocketServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			previousData = jsonStr
 		}
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 

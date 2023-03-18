@@ -10,6 +10,7 @@ import (
 )
 
 func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatus, activeCalls *data.ActiveCalls) error {
+
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return err
@@ -61,25 +62,25 @@ func ConnectToAMI(address, username, password string, peerStatus *data.PeerStatu
 
 			if key == "Event" {
 				object.Event = value
-			}
-			if key == "ChannelState" {
+			} else if key == "ChannelState" {
 				object.ChannelState = value
-			}
-			if key == "Linkedid" {
+			} else if key == "Linkedid" {
 				object.Linkedid = value
-			}
-			if key == "Peer" {
+			} else if key == "Peer" {
 				object.Peer = value
-			}
-			if key == "PeerStatus" {
+			} else if key == "PeerStatus" {
 				object.PeerStatus = value
+			} else {
+				continue
 			}
 
 		}
 		data.HandleEvent(object, activeCalls)
 		data.GetPeerStatus(object, peerStatus)
-
-		//fmt.Println("Calls:", activeCalls)
+		select {
+		case EventNotifier <- true:
+		default:
+		}
 
 	}
 

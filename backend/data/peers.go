@@ -51,6 +51,8 @@ func GetPeerStatus(data Data, peerStatus *PeerStatus) {
 				peerStatus.Inactive++
 
 			}
+		} else {
+			return
 		}
 
 	}
