@@ -1,0 +1,3 @@
+TODO:
+- create a websocket that will display all data from events ( registered, unregistered peers, active calls, started call..)
+- 

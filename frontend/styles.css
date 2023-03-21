@@ -6,6 +6,12 @@ html {
   width: 100px;
   height: 100px;
 }
+.ui.grid > .row {
+  display: flex !important;
+  justify-content: space-around !important;
+  align-items: center !important;
+}
+
 .main {
   background-color: #2a384c;
   padding: 20px 0px;
@@ -13,16 +19,7 @@ html {
 .custom-header {
   padding-left: 20px !important;
 }
-div.ui.container {
-  margin: 20px 0px !important;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  width: 100%;
-}
-.ui.grid > .row {
-  justify-content: space-around;
-}
+
 footer.ui.footer.segment {
   background-color: #2a384c;
   position: absolute;
@@ -35,30 +32,4 @@ footer.ui.footer.segment {
 .custom-footer-text {
   color: #a0b2c2 !important;
   font-style: italic;
-}
-
-@media only screen and (max-width: 733px) {
-  .ui.grid {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-  .ui.grid > .row > [class*="three wide"].column {
-    width: 32% !important;
-  }
-  .ui.statistic > .value {
-    font-size: 40px !important;
-    font-weight: bold !important;
-  }
-}
-
-@media only screen and (max-width: 451) {
-  .ui.grid {
-    flex-wrap: wrap;
-  }
-}
-
-.lastUpdate {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
 }
